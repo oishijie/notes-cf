@@ -2,6 +2,32 @@
 
 本文件记录锤子便签中值得用户关注的变更，格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循[语义化版本](https://semver.org/lang/zh-CN/)。
 
+本仓库是 [zhaoolee/notes](https://github.com/zhaoolee/notes) 的派生改造版。**2.0.0 及之后**由本仓库维护，版本比较链接指向本仓库；**1.11.2 及之前**是上游原项目的历史记录，链接保留在原仓库，内容未作改动。
+
+## [2.0.0] - 2026-10-11
+
+### 新增
+
+- 部署形态改为单个 Cloudflare Worker：前端静态资源走 Workers 静态资源绑定在边缘分发，账号与云端工作区存 D1，导入图片与封面存 R2。不再需要自建服务器、Nginx 或常驻 Node 进程，Cloudflare 免费额度即可运行。
+- 支持绑定自定义域名作为对外地址，并可用 `NOTES_PUBLIC_BASE_URL` 指定规范地址，让 Hermes Skill 包内写入正式域名而不是临时子域。
+- 原「关于」页的开源地址改指本仓库，更新日志页新增派生版说明。
+
+### 变更
+
+- 服务端框架由 Express 换成 Hono，保留原有 33 个 API 路由与请求/响应契约，前端 13 处 `fetch("/api/…")` 无需改动。
+- 账号口令哈希由 Node `scrypt` 改为 WebCrypto PBKDF2-SHA256（哈希串自带算法与迭代次数前缀，便于日后平滑调整）。
+- 云端工作区的并发写入改用 D1 条件更新（`ON CONFLICT DO UPDATE … WHERE updated_at = ?`）实现乐观锁，替代原先依赖单进程内存写队列的方案；多 isolate 并发下也不会互相覆盖。
+- 保存图片（PNG 长图）、离线归档（单文件 HTML）和「导出全部便签」（ZIP）改为在浏览器本地生成：渲染直接复用预览时的同一套 React 组件与样式，所见即所得，正文不再上传到服务器。归档 HTML 内联完整 CSS 与图片 data URL，导出后双击即可离线查看。
+- 微信公众号草稿中无正文图片的文章封面，由 sharp 生成固定图片改为按当前主题即时生成纯色 PNG；封面配色沿用各主题的既有色值。
+- 七牛上传凭证改用项目内置的纯 JS HMAC-SHA1 实现（Workers 的 WebCrypto 不提供 SHA-1），不再依赖官方 SDK。
+- ZIP 打包改用浏览器与 Workers 通用的 `CompressionStream("deflate-raw")`，前后端共用同一份实现。
+
+### 移除
+
+- 移除 Docker、Docker Compose 与 Nginx 的全部部署方式和配置文件（`Dockerfile.*`、`docker-compose*.yml`、`docker/`、`.dockerignore`、`docker-publish.yml`）。
+- 移除服务端渲染依赖：Playwright Chromium 截图、multer 表单上传、sharp 图像处理，以及旧的 Express 服务端源码目录。
+- 移除服务端导出接口 `POST /api/export`、`POST /api/archive`、`POST /api/workspace/archive` 及其任务状态与结果下载端点。依赖这些接口的 `skills/notes-export-api` 和 `dsh-plugin` 需要另行适配后才能指向本仓库的部署。
+
 ## [1.11.2] - 2026-10-08
 
 ### 修复
@@ -306,6 +332,7 @@
 - PC 版便签操作栏右侧按钮调整为“AI、删除、分享”的顺序，与 APP 版详情操作保持一致。
 - 重置 Hermes 安装链接前会明确提示旧链接立即失效，并要求二次确认，避免误触轮换。
 
+[2.0.0]: https://github.com/oishijie/notes-cf/releases/tag/v2.0.0
 [1.11.2]: https://github.com/zhaoolee/notes/compare/1.11.1...1.11.2
 [1.11.1]: https://github.com/zhaoolee/notes/compare/1.11.0...1.11.1
 [1.11.0]: https://github.com/zhaoolee/notes/compare/1.10.7...1.11.0

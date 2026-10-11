@@ -32,9 +32,13 @@ test("CHANGELOG 使用固定的人类可读格式记录未发布与正式版本"
   const latestReleaseIndex = hasUnreleasedSection ? 1 : 0;
 
   assert.match(changelog, /^# 更新日志\n/);
-  assert.equal(
-    secondLevelHeadings[latestReleaseIndex],
-    `[${packageVersion.version}] - 2026-10-08`,
+  // 派生仓库自 2.0.0 起独立发版，发布日期不再与上游对齐，因此这里只校验
+  // 「标题里是最新版本号 + 是一个合法日期」，不再写死具体日期。
+  assert.match(
+    secondLevelHeadings[latestReleaseIndex] ?? "",
+    new RegExp(
+      `^\\[${packageVersion.version.replaceAll(".", "\\.")}\\] - \\d{4}-\\d{2}-\\d{2}$`,
+    ),
   );
   assert.ok(categoryHeadings.length > 0);
 
@@ -152,6 +156,17 @@ test("changelog 解析器保留便签分节并解析版本比较链接", () => {
     heading: string;
     content: RegExp[];
   }> = [
+    {
+      version: "2.0.0",
+      heading:
+        "[2.0.0](https://github.com/oishijie/notes-cf/releases/tag/v2.0.0) - 2026-10-11",
+      content: [
+        /Cloudflare Worker.*D1.*R2.*免费额度/s,
+        /PNG 长图.*离线归档.*浏览器本地生成.*同一套 React 组件.*所见即所得/s,
+        /### 移除[\s\S]*Docker.*Docker Compose.*Nginx/s,
+        /### 移除[\s\S]*POST \/api\/export.*POST \/api\/archive.*POST \/api\/workspace\/archive/s,
+      ],
+    },
     {
       version: "1.11.2",
       heading:
