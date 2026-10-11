@@ -2929,3 +2929,20 @@
 - 部署该账号的 API Token 权限实测：可列 zone、可读写 Workers（脚本 / 自定义域名），
   **但没有 DNS 记录读写权限**（`GET /zones/<id>/dns_records` 返回 10000
   Authentication error），因此排查 DNS 需走控制台。
+
+### 版本号与更新日志（2026-10-11 起）
+
+- **本仓库自 2.0.0 起独立发版**。1.11.2 及之前是上游 `zhaoolee/notes` 的历史，
+  版本比较链接保留在原仓库，不要改动；2.0.0 起链接指向
+  `https://github.com/oishijie/notes-cf/releases/tag/v<n>`。
+- `CHANGELOG.md` 顶部有一段派生版声明，说明 2.0.0 为分界线。
+- **改版本号必须同时改三处**，否则测试必挂：
+  1. `package.json` 的 `version`
+  2. `CHANGELOG.md` 顶部新增 `## [<版本>] - <YYYY-MM-DD>` 与对应链接定义
+  3. `frontend/tests/changelog.test.ts` —— ① 最新版断言（已改为动态匹配
+     `[\d{4}-\d{2}-\d{2}]`，不再写死日期）② `releases` 数组**顺序敏感**
+     （`assert.deepEqual`），新版本要插在数组第一位
+- 分类只能用白名单：新增 / 变更 / 弃用 / 移除 / 修复 / 安全，且每个分类下必须有
+  列表项（测试校验 `/^### <分类>\n(?:\n)?- \S/m`）。
+- `CHANGELOG.md` 通过 `import changelogMarkdown from "../CHANGELOG.md?raw"` 打进
+  前端 bundle，`/changelog` 页面读的就是它 ⇒ **改完必须 build + deploy 才在线上生效**。
