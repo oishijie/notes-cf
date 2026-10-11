@@ -2946,3 +2946,35 @@
   列表项（测试校验 `/^### <分类>\n(?:\n)?- \S/m`）。
 - `CHANGELOG.md` 通过 `import changelogMarkdown from "../CHANGELOG.md?raw"` 打进
   前端 bundle，`/changelog` 页面读的就是它 ⇒ **改完必须 build + deploy 才在线上生效**。
+
+## 外部图床白名单（2.1.0 起）
+
+- **配置**：`wrangler.toml` 的 `[vars] IMAGE_BED_HOSTS`，逗号分隔主机名。只比对
+  hostname（忽略端口与大小写）。留空 = 全部按原行为下载转存 R2。
+- **判断函数**：`src/lib/image-bed.ts` —— `parseImageBedHosts()` / `isImageBedUrl()`
+  / `inferImageExtension()`。纯函数、零依赖、前后端共享；worker 侧按既有惯例从
+  `../src/lib/image-bed.js` 导入（与 `markdown-images.js` 同）。
+- **命中后的行为**：
+  1. `POST /api/images/import`（`worker/index.ts`）直接返回
+     `{ extension, hash: "", path: <外链>, url: <外链> }`，**不下载也不写 R2**。
+     前端 `handleImportedSource` 本来就是 `insertImageMarkdown(result.path || result.url)`，
+     所以**前端零改动**。
+  2. `prepareWechatArticle`（`worker/wechat-article.ts`）里与 `isQiniuUrl` 并列的
+     复用分支，命中即跳过七牛上传。
+- **⚠️ 七牛配置校验已从函数入口下移到循环内**：只有真正要「把本站图片搬到七牛」时
+  才要求 `QINIU_*` ⇒ **正文图片全部位于外部图床时，不配七牛也能复制到公众号**，
+  顺带修掉迁移后「带图复制必 503」。同时 `isQiniuUrl()` 签名放宽为
+  `(sourceUrl, config: QiniuConfig | null)`，未配置时返回 false。
+- **归档**：`src/lib/archive.ts` 的 `imgSrcPattern` 扩为也匹配 `https?://`，单便签
+  归档会把外链图抓成 data URL 内联；CSS 的 `url()` 仍只内联站内相对路径（避免把
+  外链字体内联进 HTML 导致归档体积暴涨）。
+- **前端识别刻意未改**：`isLikelyImageUrl()` 仍只按扩展名判断。图床 URL 只要带图片
+  后缀即可（Sanyue ImgHub 命名 `<时间戳>_<原名>.png` 恒带）⇒ 无需为白名单加前端配置。
+- **图床实测**（`imgbed.058823.xyz`，用户自建 Sanyue ImgHub）：响应带
+  `Access-Control-Allow-Origin: *` ⇒ 导出 PNG（html2canvas `useCORS`）、离线归档
+  抓取、工作区 ZIP 下载三条浏览器端读字节的出口对外链**不需要额外服务端代理**。
+  该图床 `POST /upload` 无凭据返回 401；后台具备「API Token 管理」「用户端认证 /
+  上传密码」与 WebDAV 渠道。
+- **未做（受权限阻塞）**：裁剪（`openImageCrop`）后仍是上传 R2。要让裁剪结果也留在
+  图床，需要图床的上传凭据 + 一条 Worker 代传链路（凭据只能走 `wrangler secret`，
+  绝不能进前端 bundle）。

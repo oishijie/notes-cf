@@ -30,6 +30,14 @@ export interface Env {
   // ---- 匿名额度 ----
   ANONYMOUS_DAILY_UPLOAD_LIMIT?: string;
 
+  // ---- 外部图床白名单 ----
+  /**
+   * 逗号分隔的主机名列表。命中该白名单的图片地址会被「原样保留为外链」，
+   * 不再下载转存到 R2（例如自建图床 `imgbed.example.com`）。
+   * 留空时所有远程图片仍按原行为转存 R2。
+   */
+  IMAGE_BED_HOSTS?: string;
+
   // ---- 七牛图床（公众号正文图片） ----
   QINIU_ACCESS_KEY?: string;
   QINIU_SECRET_KEY?: string;

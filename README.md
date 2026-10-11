@@ -184,6 +184,13 @@ npx wrangler secret put QINIU_BUCKET
 npx wrangler secret put QINIU_DOMAIN
 ```
 
+导入图片默认会把远程图片下载转存到 R2。若要保留原始外链（例如你自建的图床），把图床
+域名写进 `wrangler.toml` 的 `[vars]`，命中该域名的地址会原样保留、不下载也不占 R2：
+
+```toml
+IMAGE_BED_HOSTS = "imgbed.example.com,cdn.example.com"
+```
+
 ### 5. 构建并发布
 
 ```bash

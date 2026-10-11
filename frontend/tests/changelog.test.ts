@@ -157,6 +157,15 @@ test("changelog 解析器保留便签分节并解析版本比较链接", () => {
     content: RegExp[];
   }> = [
     {
+      version: "2.1.0",
+      heading:
+        "[2.1.0](https://github.com/oishijie/notes-cf/compare/2.0.0...2.1.0) - 2026-10-11",
+      content: [
+        /IMAGE_BED_HOSTS.*原样保留为外链.*不.*转存.*R2/s,
+        /### 变更[\s\S]*复制到公众号.*七牛.*直接复用.*QINIU_/s,
+      ],
+    },
+    {
       version: "2.0.0",
       heading:
         "[2.0.0](https://github.com/oishijie/notes-cf/releases/tag/v2.0.0) - 2026-10-11",

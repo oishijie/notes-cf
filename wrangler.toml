@@ -52,6 +52,8 @@ enabled = true
 [vars]
 # 未登录用户每天可用的临时图片上传张数
 ANONYMOUS_DAILY_UPLOAD_LIMIT = "500"
+# 外部图床白名单（逗号分隔主机名）：命中则原样保留外链，不下载也不转存 R2
+IMAGE_BED_HOSTS = "imgbed.058823.xyz"
 # 对外服务地址：决定 Hermes Skill 包里写入的 API 地址。
 # 设为自定义域名后，即使通过 workers.dev 预览访问，生成的链接也是正式域名。
 NOTES_PUBLIC_BASE_URL = "https://notes.cro.cc.cd"

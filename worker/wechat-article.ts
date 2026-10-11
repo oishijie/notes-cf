@@ -21,6 +21,7 @@ import {
   decodeHtmlImageSource as decodeHtmlImageSourceShared,
   replaceAll as replaceAllShared,
 } from "../src/lib/markdown-images.js";
+import { isImageBedUrl } from "../src/lib/image-bed.js";
 import type { NoteCardThemeId } from "../src/types/app.js";
 import type { AnonymousQuotaStatus, NotesStore } from "./auth.js";
 import { getShanghaiDateKey } from "./auth.js";
@@ -342,24 +343,31 @@ export async function prepareWechatArticle(
 
   if (imageSources.length > 0) {
     const qiniuConfig = loadQiniuConfig(env);
-
-    if (!qiniuConfig) {
-      const { QiniuConfigurationError } = await import("./qiniu.js");
-
-      throw new QiniuConfigurationError(
-        "未配置七牛图床。请设置 QINIU_ACCESS_KEY、QINIU_SECRET_KEY、QINIU_BUCKET 和 QINIU_DOMAIN。",
-      );
-    }
-
     const imagesByContentHash = new Map<
       string,
       { buffer: Bytes; extension: string; sources: string[] }
     >();
 
     for (const source of imageSources) {
+      // 已在七牛上的图片：地址可直接被微信抓取，复用即可
       if (isQiniuUrl(source, qiniuConfig)) {
         reusedImageCount += 1;
         continue;
+      }
+
+      // 外部图床白名单（如自建图床）：图片本身已公网可达，同样直接复用
+      if (isImageBedUrl(source, env.IMAGE_BED_HOSTS)) {
+        reusedImageCount += 1;
+        continue;
+      }
+
+      // 只有真正要把图片搬到七牛时，才要求七牛配置
+      if (!qiniuConfig) {
+        const { QiniuConfigurationError } = await import("./qiniu.js");
+
+        throw new QiniuConfigurationError(
+          "未配置七牛图床。请设置 QINIU_ACCESS_KEY、QINIU_SECRET_KEY、QINIU_BUCKET 和 QINIU_DOMAIN。",
+        );
       }
 
       const image = await resolveImageSource(env, source, options.publicBaseUrl);
@@ -393,42 +401,46 @@ export async function prepareWechatArticle(
     }
 
     const uniqueImages = Array.from(imagesByContentHash.values());
-    const temporaryPrefix = [
-      qiniuConfig.prefix,
-      "temporary",
-      getShanghaiDateKey(),
-    ]
-      .filter(Boolean)
-      .join("/");
 
-    if (options.temporaryUploads && uniqueImages.length > 0) {
-      anonymousQuota = await store.reserveAnonymousUploads(
-        uniqueImages.length,
-        options.anonymousDailyUploadLimit,
-      );
-    }
+    // 能进入 uniqueImages 说明循环里已通过七牛配置校验，这里必然存在 qiniuConfig
+    if (uniqueImages.length > 0 && qiniuConfig) {
+      const temporaryPrefix = [
+        qiniuConfig.prefix,
+        "temporary",
+        getShanghaiDateKey(),
+      ]
+        .filter(Boolean)
+        .join("/");
 
-    for (const image of uniqueImages) {
-      const uploaded = await uploadImageBufferToQiniu(
-        image.buffer,
-        image.extension,
-        qiniuConfig,
-        options.temporaryUploads
-          ? { deleteAfterDays: 1, prefix: temporaryPrefix }
-          : undefined,
-      );
-
-      for (const source of image.sources) {
-        replacements.set(source, uploaded.url);
+      if (options.temporaryUploads) {
+        anonymousQuota = await store.reserveAnonymousUploads(
+          uniqueImages.length,
+          options.anonymousDailyUploadLimit,
+        );
       }
 
-      if (uploaded.uploaded) {
-        uploadedImageCount += 1;
-      } else {
-        reusedImageCount += 1;
-      }
+      for (const image of uniqueImages) {
+        const uploaded = await uploadImageBufferToQiniu(
+          image.buffer,
+          image.extension,
+          qiniuConfig,
+          options.temporaryUploads
+            ? { deleteAfterDays: 1, prefix: temporaryPrefix }
+            : undefined,
+        );
 
-      reusedImageCount += Math.max(0, image.sources.length - 1);
+        for (const source of image.sources) {
+          replacements.set(source, uploaded.url);
+        }
+
+        if (uploaded.uploaded) {
+          uploadedImageCount += 1;
+        } else {
+          reusedImageCount += 1;
+        }
+
+        reusedImageCount += Math.max(0, image.sources.length - 1);
+      }
     }
 
     for (const [source, replacement] of Array.from(replacements).sort(

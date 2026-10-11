@@ -225,7 +225,8 @@ PNG 长图导出、离线归档和工作区导出已改为**纯浏览器端实�
   指定其他账号，也不读取 `.env` 回退值；保存后会立即验证微信接口连通性
 - `GET /api/wechat/status`：使用当前登录账号自己的配置取得并缓存微信接口调用凭据，
   只返回是否已配置、是否连通和脱敏后的错误信息，不返回接口调用凭据
-- `POST /api/images/import`：上传图片或从 URL 下载图片
+- `POST /api/images/import`：上传图片或从 URL 下载图片；地址命中 `IMAGE_BED_HOSTS`
+  配置的外部图床域名时，直接原样返回该外链，不下载也不转存 R2
 - `POST /api/export`：将 Markdown 导出为 PNG
 - `POST /api/archive`：按 `theme` 生成包含 Markdown、主题化 HTML、图片和字体的 ZIP
 - `POST /api/workspace/archive`：提交当前完整工作区并创建整体导出任务
@@ -296,7 +297,9 @@ CORS 无法读取，会保留原始地址而不是静默生成缺图归档。
 桌面分享预览和手机分享面板都提供“复制到公众号”。前端先调用
 `POST /api/wechat`，后端扫描 Markdown 与内嵌 HTML 中的图片，读取本地
 `/images/*`、`public/*`、Data URL 或远程图片，并用内容 SHA-256 作为对象名上传
-到七牛。已经指向同一七牛域名的图片不会重复上传。底部署名使用的 Smartisan
+到七牛。已经指向同一七牛域名的图片，以及命中 `IMAGE_BED_HOSTS` 外部图床白名单的
+图片，都不会重复上传——后者直接复用原地址交给微信抓取，因此正文图片全部位于外部
+图床时无需配置七牛即可复制。底部署名使用的 Smartisan
 锤子 PNG 默认引用项目生产图片服务提供的 HTTPS 直链；用户上传自定义 Logo 后，
 后端把它与正文图片一起按内容哈希去重并上传。按当前产品约定，公众号正文和
 自定义 Logo 的七牛对象直接使用 `QINIU_DOMAIN` 返回的公开地址；生产配置明确为

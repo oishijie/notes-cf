@@ -216,7 +216,15 @@ function encodeObjectKey(key: string): string {
     .join("/");
 }
 
-export function isQiniuUrl(sourceUrl: string, config: QiniuConfig): boolean {
+/** 判断地址是否已经指向七牛空间；未配置七牛时恒为 false。 */
+export function isQiniuUrl(
+  sourceUrl: string,
+  config: QiniuConfig | null,
+): boolean {
+  if (!config) {
+    return false;
+  }
+
   return sourceUrl === config.domain || sourceUrl.startsWith(`${config.domain}/`);
 }
 

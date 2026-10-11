@@ -57,6 +57,7 @@ import {
   detectImageFormat,
   MAX_IMAGE_SIZE_BYTES,
 } from "./images.js";
+import { inferImageExtension, isImageBedUrl } from "../src/lib/image-bed.js";
 import { utf8Bytes, type Bytes } from "./lib/bytes.js";
 import { sha256Hex } from "./lib/crypto.js";
 import {
@@ -941,6 +942,16 @@ app.post("/api/images/import", async (c) => {
         { error: "请拖入图片文件，或粘贴一个可访问的图片 URL。" },
         400,
       );
+    }
+
+    // 命中外部图床白名单：图片本身已公网可达，保留外链原样，不下载也不转存 R2
+    if (isImageBedUrl(sourceUrl, c.env.IMAGE_BED_HOSTS)) {
+      return c.json({
+        extension: inferImageExtension(sourceUrl),
+        hash: "",
+        path: sourceUrl,
+        url: sourceUrl,
+      });
     }
 
     return c.json(

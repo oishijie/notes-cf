@@ -200,13 +200,19 @@ async function toDataUrl(source: string): Promise<string | null> {
   }
 }
 
-/** 把 CSS 与 HTML 中引用的站内图片替换为 data URL，使归档完全离线可用。 */
+/**
+ * 把 CSS 与 HTML 中引用的图片替换为 data URL，使归档完全离线可用。
+ *
+ * 正文图片额外支持外链（自建图床带 CORS，浏览器端可直接抓取内联）；
+ * CSS 中的资源仍只内联站内相对路径 —— 把外链字体之类内联进 HTML 会让归档体积暴涨，
+ * 且失败时也没有收益。抓取失败一律保留原地址，不生成缺图归档。
+ */
 async function inlineLocalImages(
   content: string,
   cache: Map<string, string | null>,
 ): Promise<string> {
   const urlPattern = /url\((['"]?)(\/[^'")]+)\1\)/g;
-  const imgSrcPattern = /(<img\b[^>]*\bsrc=)(["'])(\/[^"']*)\2/gi;
+  const imgSrcPattern = /(<img\b[^>]*\bsrc=)(["'])((?:https?:\/\/|\/)[^"']*)\2/gi;
   const candidates = new Set<string>();
 
   for (const match of content.matchAll(urlPattern)) {
