@@ -1,0 +1,15 @@
+node_modules
+dist
+dist-server
+
+# Cloudflare 本地运行时产物与本地机密
+.wrangler
+.dev.vars
+
+.env
+
+# 迁移前旧 Docker / Express 方案的备份，确认无需回退后可整目录删除
+.cf-migration-backup
+
+dsh-plugin/node_modules
+.playwright-mcp/

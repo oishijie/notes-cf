@@ -1,0 +1,57 @@
+# 开源版锤子便签 —— Cloudflare Workers 部署配置
+#
+# 单 Worker 同时承担：静态前端资源、/api/* 后端接口、/images/* 图片读取。
+# 部署前请先替换 d1_databases.database_id，并创建 R2 存储桶。
+
+name = "notes"
+main = "worker/index.ts"
+compatibility_date = "2025-09-23"
+
+# ---------------------------------------------------------------------------
+# 自定义域名：Cloudflare 会自动创建 DNS 记录并签发证书
+# 注意 note.cro.cc.cd（单数）已被 edgeever 占用，本 Worker 使用复数 notes
+# ---------------------------------------------------------------------------
+routes = [
+  { pattern = "notes.cro.cc.cd", custom_domain = true }
+]
+
+# ---------------------------------------------------------------------------
+# 静态资源：Vite 构建产物直接由 Cloudflare 边缘网络提供（不消耗 Worker 请求额度）
+# ---------------------------------------------------------------------------
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+# 前端是 SPA（含 /changelog、/promo/editor 等客户端路由），未命中文件时回退到 index.html
+not_found_handling = "single-page-application"
+# 这两个前缀必须先交给 Worker 处理，不能直接被静态资源短路
+run_worker_first = ["/api/*", "/images/*"]
+
+# ---------------------------------------------------------------------------
+# D1：账号、会话凭据版本、云端工作区、公众号配置、匿名额度
+# 创建：npx wrangler d1 create notes-db
+# ---------------------------------------------------------------------------
+[[d1_databases]]
+binding = "DB"
+database_name = "notes-db"
+database_id = "deee573b-294c-49d6-9470-d41466de4d91"
+
+# ---------------------------------------------------------------------------
+# R2：导入图片与导出结果（替代原 storage/images 目录）
+# 创建：npx wrangler r2 bucket create notes-images
+# ---------------------------------------------------------------------------
+[[r2_buckets]]
+binding = "IMAGES"
+bucket_name = "notes-images"
+
+[observability]
+enabled = true
+
+# ---------------------------------------------------------------------------
+# 普通变量（非机密）。机密请用 wrangler secret put 写入，不要写在这里。
+# ---------------------------------------------------------------------------
+[vars]
+# 未登录用户每天可用的临时图片上传张数
+ANONYMOUS_DAILY_UPLOAD_LIMIT = "500"
+# 对外服务地址：决定 Hermes Skill 包里写入的 API 地址。
+# 设为自定义域名后，即使通过 workers.dev 预览访问，生成的链接也是正式域名。
+NOTES_PUBLIC_BASE_URL = "https://notes.cro.cc.cd"

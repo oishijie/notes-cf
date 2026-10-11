@@ -1,0 +1,46 @@
+{
+  "name": "notes",
+  "private": true,
+  "version": "1.11.2",
+  "license": "Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "dev:frontend": "vite --host 127.0.0.1 --port 15173",
+    "dev:worker": "wrangler dev --port 8787",
+    "build": "npm run typecheck && vite build",
+    "build:static": "vite build",
+    "typecheck": "npm run typecheck:app && npm run typecheck:worker",
+    "typecheck:app": "tsc --noEmit -p tsconfig.json",
+    "typecheck:worker": "tsc --noEmit -p tsconfig.worker.json",
+    "test": "node --import tsx --test frontend/tests/*.test.ts",
+    "benchmark:input": "node scripts/benchmark-input-latency.mjs",
+    "preview": "vite preview",
+    "deploy": "npm run build && wrangler deploy",
+    "db:local": "wrangler d1 execute notes-db --local --file=./schema.sql",
+    "db:remote": "wrangler d1 execute notes-db --remote --file=./schema.sql"
+  },
+  "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
+    "hono": "^4.9.0",
+    "html2canvas-pro": "^2.5.2",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
+    "zustand": "^5.0.12"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250923.0",
+    "@types/node": "^25.5.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.0.0",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.2",
+    "vite": "^7.1.2",
+    "wrangler": "^4.42.0"
+  }
+}

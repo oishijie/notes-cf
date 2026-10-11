@@ -1,0 +1,7 @@
+# pnpm 配置（pnpm 10+ 不再读取 package.json 的 "pnpm" 字段）
+#
+# esbuild 与 workerd 需要在安装时下载平台二进制，必须显式放行构建脚本，
+# 否则 `wrangler dev` 会因为缺少 workerd 而无法启动。
+allowBuilds:
+  esbuild: true
+  workerd: true
