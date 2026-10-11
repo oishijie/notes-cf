@@ -49,7 +49,7 @@ test("设置页只保留长期偏好，不混入当前便签操作", () => {
   assert.match(html, /via Feedback/);
   assert.match(html, /id="settings-pane-about"/);
   assert.match(html, /开源地址/);
-  assert.match(html, /href="https:\/\/github\.com\/zhaoolee\/notes"/);
+  assert.match(html, /href="https:\/\/github\.com\/oishijie\/notes-cf"/);
   assert.match(html, /href="\/changelog"/);
   assert.match(html, /查看版本新增、变更和修复记录/);
   assert.match(html, /target="_blank"/);

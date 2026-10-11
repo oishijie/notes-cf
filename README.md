@@ -1,5 +1,18 @@
 # 开源版锤子便签
 
+> ### 关于本项目
+>
+> 本仓库是 **[zhaoolee/notes](https://github.com/zhaoolee/notes)** 的派生改造版。
+> 原项目的代码、设计、文档与图片素材版权归原作者 **zhaoolee** 及贡献者所有，
+> 遵循原仓库的 [LICENSE](./LICENSE) 与 [NOTICE](./NOTICE)。
+>
+> **源仓库**： <https://github.com/zhaoolee/notes>
+> **本仓库**： <https://github.com/oishijie/notes-cf>
+>
+> 本仓库的改动范围仅限**部署形态**：由原来的 Docker / Express + Playwright
+> 改为**单 Cloudflare Worker + D1 + R2**，并移除 Docker 等其余部署方式。
+> 应用功能、界面样式与数据格式均沿用原项目，未做业务层改动。
+> 部署步骤见下方[「部署到 Cloudflare Workers」](#部署到-cloudflare-workers)。
 
 ![](./README.assets/aab7c89dace491a0c90f98d04f53ab503e755968249ea9a89521f56b69eedeac.png)
 

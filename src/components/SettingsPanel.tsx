@@ -62,7 +62,7 @@ const SETTINGS_CATEGORIES = [
 
 type SettingsCategory = (typeof SETTINGS_CATEGORIES)[number]["id"];
 
-const PROJECT_REPOSITORY_URL = "https://github.com/zhaoolee/notes";
+const PROJECT_REPOSITORY_URL = "https://github.com/oishijie/notes-cf";
 const CHANGELOG_URL = "/changelog";
 
 export function SettingsPanel({
